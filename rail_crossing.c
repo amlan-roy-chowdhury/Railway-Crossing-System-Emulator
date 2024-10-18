@@ -30,3 +30,4 @@ void set_gpio_value(int gpio_pin, int value) {
     fprintf(file, "%d", value);
     fclose(file);
 }
+//commit
