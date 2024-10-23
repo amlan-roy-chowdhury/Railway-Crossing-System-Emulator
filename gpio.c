@@ -1,5 +1,9 @@
 #include "railway_system.h"
 
+#define GPIO_SLEEP_DURATION_US (100000U)   // Define a constant for the sleep duration
+#define SERVO_SLEEP_DURATION_US (500000U)  // Duration for servo sleep in microseconds
+#define VALUE_STR_SIZE (3U)                // Length for value string
+
 // Global variables
 volatile SystemState current_state = IDLE;
 volatile bool system_running = true;
@@ -22,7 +26,7 @@ void export_gpio(int gpio_pin) {
         }
         fprintf(file, "%d", gpio_pin);
         fclose(file);
-        usleep(100000);
+        usleep(GPIO_SLEEP_DURATION_US);
     }
 }
 
@@ -67,7 +71,7 @@ void set_gpio_value(int gpio_pin, int value) {
 int read_gpio_value(int gpio_pin) {
     char path[PATH_SIZE];
     FILE *file;
-    char value_str[3];
+    char value_str[VALUE_STR_SIZE];
 
     snprintf(path, sizeof(path), "/sys/class/gpio/gpio%d/value", gpio_pin);
     file = fopen(path, "r");
@@ -110,7 +114,7 @@ int initialize_servo(void) {
 
 void cleanup_servo(void) {
     set_pwm(SERVO_PWM_DUTY_CYCLE, gpio_config.pwm_num, SERVO_UP_POSITION);
-    usleep(500000);
+    usleep(SERVO_SLEEP_DURATION_US);
     set_pwm(SERVO_PWM_ENABLE, gpio_config.pwm_num, "0");
 }
 
@@ -125,7 +129,7 @@ void initialize_system(void) {
     export_gpio(gpio_config.led_2);
     export_gpio(gpio_config.buzzer);
     
-    usleep(500000);
+    usleep(SERVO_SLEEP_DURATION_US);
 
     set_gpio_direction(gpio_config.b1, "in");
     set_gpio_direction(gpio_config.b2, "in");
