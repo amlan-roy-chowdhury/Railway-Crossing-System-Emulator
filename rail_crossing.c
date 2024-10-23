@@ -31,3 +31,4 @@ void set_gpio_value(int gpio_pin, int value) {
     fclose(file);
 }
 //commit
+// GPIO func
