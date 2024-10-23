@@ -8,7 +8,8 @@ static void signal_handler(int signo) {
 }
 
 int main(void) {
-    pthread_t button_thread, led_thread, servo_thread, buzzer_thread;
+    //threads for different hardware processes
+    pthread_t button_thread, led_thread, servo_thread, buzzer_thread; 
     
     // Print system info and team details
     print_system_info();

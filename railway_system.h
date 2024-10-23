@@ -40,14 +40,14 @@ typedef enum {
 
 // GPIO Configuration Structure
 typedef struct {
-    int b1;
-    int b2;
-    int b3;
-    int b4;
-    int led_1;
-    int led_2;
-    int buzzer;
-    int pwm_num;
+    int b1; //button 1
+    int b2; //button 2
+    int b3; //button 3
+    int b4; //button 4
+    int led_1; //led 1
+    int led_2; //led 2
+    int buzzer; //buzzer
+    int pwm_num; //pulse width modulation
 } GPIO_Config;
 
 // Global Variables

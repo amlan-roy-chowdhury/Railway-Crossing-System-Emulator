@@ -1,5 +1,11 @@
 #include "railway_system.h"
 
+#define LED_STOP_DELAY_MS (1000U)  // Delay for stopping LED
+#define MS_TO_US (1000U)  // Convert milliseconds to microseconds
+#define DEBOUNCE_DELAY_US (50000U)  // 50ms debounce delay
+#define SERVO_SLEEP_DURATION_US (500000U)  // Duration for servo sleep in microseconds
+#define GATE_STATE_TIMER_US (100000U)  // Duration between every gate check
+
 void* button_thread_function(void* arg) {
     (void)arg;
     
@@ -10,7 +16,7 @@ void* button_thread_function(void* arg) {
     bool in_collision = false;
     char input;
     
-    enum { NONE, EAST_TO_WEST, WEST_TO_EAST } direction = NONE;
+    enum { NONE, EAST_TO_WEST, WEST_TO_EAST } direction = NONE; //variable to keep track of direction
     
     printf("Starting button monitor...\n");
     printf("Ready for train detection\n");
@@ -26,10 +32,10 @@ void* button_thread_function(void* arg) {
     fcntl(0, F_SETFL, flags | O_NONBLOCK);
     
     while (system_running) {
-        int b1 = read_gpio_value(gpio_config.b1);
-        int b2 = read_gpio_value(gpio_config.b2);
-        int b3 = read_gpio_value(gpio_config.b3);
-        int b4 = read_gpio_value(gpio_config.b4);
+        int b1 = read_gpio_value(gpio_config.b1); //button 1
+        int b2 = read_gpio_value(gpio_config.b2); //button 2
+        int b3 = read_gpio_value(gpio_config.b3); //button 3
+        int b4 = read_gpio_value(gpio_config.b4); //button 4
         
         if (read(STDIN_FILENO, &input, 1) > 0) {
             if (input == 'q' && in_collision) {
@@ -70,7 +76,7 @@ void* button_thread_function(void* arg) {
                 printf("B4 pressed - Train clear\n");
                 b4_active = true;
                 led_active = false;
-                usleep(LED_STOP_DELAY_MS * 1000);
+                usleep(LED_STOP_DELAY_MS * MS_TO_US);
                 gate_down = false;
                 current_state = IDLE;
                 direction = NONE;
@@ -99,7 +105,7 @@ void* button_thread_function(void* arg) {
                 printf("B1 pressed - Train clear\n");
                 b1_active = true;
                 led_active = false;
-                usleep(LED_STOP_DELAY_MS * 1000);
+                usleep(LED_STOP_DELAY_MS * MS_TO_US);
                 gate_down = false;
                 current_state = IDLE;
                 direction = NONE;
@@ -121,7 +127,7 @@ void* button_thread_function(void* arg) {
         }
         
         pthread_mutex_unlock(&state_mutex);
-        usleep(50000);  // 50ms debounce delay
+        usleep(DEBOUNCE_DELAY_US);  // 50ms debounce delay
     }
     
     return NULL;
@@ -141,21 +147,21 @@ void* led_thread_function(void* arg) {
             // Rapid simultaneous blinking for collision risk
             set_gpio_value(gpio_config.led_1, 1);
             set_gpio_value(gpio_config.led_2, 1);
-            usleep(COLLISION_BLINK_INTERVAL_MS * 1000);
+            usleep(COLLISION_BLINK_INTERVAL_MS * MS_TO_US);
             set_gpio_value(gpio_config.led_1, 0);
             set_gpio_value(gpio_config.led_2, 0);
-            usleep(COLLISION_BLINK_INTERVAL_MS * 1000);
+            usleep(COLLISION_BLINK_INTERVAL_MS * MS_TO_US);
         } else if (is_active) {
             // Alternating pattern for normal operation
             set_gpio_value(gpio_config.led_1, led_state ? 1 : 0);
             set_gpio_value(gpio_config.led_2, led_state ? 0 : 1);
-            usleep(LED_BLINK_INTERVAL_MS * 1000);
+            usleep(LED_BLINK_INTERVAL_MS * MS_TO_US);
             led_state = !led_state;
         } else {
             // LEDs off when inactive
             set_gpio_value(gpio_config.led_1, 0);
             set_gpio_value(gpio_config.led_2, 0);
-            usleep(LED_BLINK_INTERVAL_MS * 1000);
+            usleep(LED_BLINK_INTERVAL_MS * MS_TO_US);
         }
     }
     return NULL;
@@ -179,10 +185,10 @@ void* servo_thread_function(void* arg) {
                 set_pwm(SERVO_PWM_DUTY_CYCLE, gpio_config.pwm_num, SERVO_UP_POSITION);
             }
             previous_gate_state = current_gate_state;
-            usleep(500000);  // Wait for servo movement
+            usleep(SERVO_SLEEP_DURATION_US);  // Wait for servo movement
         }
         
-        usleep(100000);  // Check gate state every 100ms
+        usleep(GATE_STATE_TIMER_US);  // Check gate state every 100ms
     }
     return NULL;
 }
@@ -197,12 +203,12 @@ void* buzzer_thread_function(void* arg) {
         
         if (current == COLLISION_RISK) {
             set_gpio_value(gpio_config.buzzer, 1);
-            usleep(100000);  // Buzzer on for 100ms
+            usleep(GATE_STATE_TIMER_US);  // Buzzer on for 100ms
             set_gpio_value(gpio_config.buzzer, 0);
-            usleep(100000);  // Buzzer off for 100ms
+            usleep(GATE_STATE_TIMER_US);  // Buzzer off for 100ms
         } else {
             set_gpio_value(gpio_config.buzzer, 0);
-            usleep(100000);
+            usleep(GATE_STATE_TIMER_US);
         }
     }
     return NULL;
